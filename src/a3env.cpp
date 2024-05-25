@@ -85,7 +85,7 @@ int main( int argc, char **argv )
 
 bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res )
 {
-    if (req.agentid >= NUM_AGENTS)
+    if (req.agentid < 0 || req.agentid >= NUM_AGENTS)
     {
         return false;
     }

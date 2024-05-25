@@ -5,7 +5,12 @@
 
 
 # Running the Node
-- Compile from the catkin workspace : `catkin_make`
+- Compile from the catkin workspace: `catkin_make`
+- Set working directory to package directory: `roscd a3env`
 - Run the node: `rosrun a3env a3env`
 
+
+# Services
+- /a3env/motors
+- /a3env/sonars
 

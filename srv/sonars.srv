@@ -1,0 +1,8 @@
+# request
+int32 agentid
+
+---
+
+# response
+float32 distance
+int32   blocktype

@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include "a3env/sonars.h"
+#include "a3env/motors.h"
 
 #include "environment.hpp"
 #include "agent.hpp"
@@ -12,29 +13,24 @@ void renderLoop( SDL_Renderer*&, View& );
 void keyInput( View &view );
 
 bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res );
+bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res );
 
 
-static constexpr size_t NUM_AGENTS = 16;
+static constexpr size_t NUM_AGENTS = 15;
+static constexpr size_t MAP_WIDTH  = 30;
+
 static std::vector<Agent> agents(NUM_AGENTS);
-static Environment environment(128);
+static Environment environment(MAP_WIDTH);
 
+// ros::ServiceClient sonarServiceClient;
 
 
 
 int main( int argc, char **argv )
 {
-    // Generate (or load) environment
+    // Load environmentfrom file
     // --------------------------------------------------------------------------
-    MazeGenerator MG;
-    auto maze = MG.generate({128, 128}, {1, 1}, {128-1, 128-1});
-
-    for (int i=0; i<128; i++)
-    {
-        for (int j=0; j<128; j++)
-        {
-            environment[i][j] = (maze[i][j]) ? BLOCK_DIRT : BLOCK_NONE;
-        }
-    }
+    environment.loadFile("./data/m2.txt");
     // --------------------------------------------------------------------------
 
 
@@ -45,11 +41,17 @@ int main( int argc, char **argv )
 
     for (int i=0; i<NUM_AGENTS; i++)
     {
-        agents[i].position = glm::vec2(0.0f, float(i));
+        int r = i / 3;
+        int c = i % 3;
+
+        agents[i].position = glm::vec2(1.2*float(2 + r), 1.2*float(2 + c));
+        agents[i].bearing  = 0.0f;
+        agents[i].velocity = 0.0f;
     }
 
-
-    // ros::ServiceServer service = n.advertiseService("sonars", sonar_callback);
+    // sonarServiceClient = n.serviceClient<a3env::sonars>("/ree/roo");
+    ros::ServiceServer service1 = n.advertiseService("a3env/sonars", sonar_callback);
+    ros::ServiceServer service2 = n.advertiseService("a3env/motors", motor_callback);
     // --------------------------------------------------------------------------
 
 
@@ -62,7 +64,7 @@ int main( int argc, char **argv )
     View view = {
         .position   = glm::vec2(0.0f),
         .resolution = glm::ivec2(1024),
-        .scale      = 4
+        .scale      = 1
     };
 
     initWindow(window, ren, view);
@@ -71,6 +73,7 @@ int main( int argc, char **argv )
 
     while (ros::ok())
     {
+        ros::spinOnce();
         renderLoop(ren, view);
     }
 
@@ -78,6 +81,20 @@ int main( int argc, char **argv )
     return 0;
 }
 
+
+
+bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res )
+{
+    if (req.agentid >= NUM_AGENTS)
+    {
+        return false;
+    }
+
+    agents[req.agentid].bearing  = req.bearing;
+    agents[req.agentid].velocity = req.velocity;
+
+    return true;
+}
 
 
 bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
@@ -88,6 +105,8 @@ bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
 
     float dist;
     int   block;
+
+    std::cout << "WOOP" << req.agentid << "\n";
 
     if (environment.raycast(pos, dir, dist, block))
     {
@@ -157,6 +176,13 @@ void renderLoop( SDL_Renderer *&ren, View &view )
         SDL_RenderClear(ren);
 
         environment.render(ren, view);
+
+
+        for (Agent agent: agents)
+        {
+            renderAgent(ren, view, agent);
+        }
+
 
         SDL_RenderPresent(ren);
     }

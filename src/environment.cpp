@@ -4,7 +4,8 @@
 #include <vector>
 
 
-Environment::Environment( int chunk_width ): m_chunk_w(chunk_width)
+Environment::Environment( int width )
+:   m_data(width, std::vector<BlockType>(width, BLOCK_NONE))
 {
 
 }
@@ -17,28 +18,28 @@ Environment::loadFile( const std::string &filepath )
     std::string line;
 
 
+    std::vector<int> tokens(4);
+
+    std::cout << "Loading file\n";
+
+
     int idx = 0;
 
-    std::vector<int> tokens(4);
 
     while (std::getline(stream, line))
     {
-        tokens[idx] = std::stoi(line);
-        idx += 1;
-
-
-        if (idx == 3)
+        // std::cout << line << "\n";
+        if (line.find("WALL:") != std::string::npos)
         {
-            BlockType block = BlockType(tokens[0]);
-            float     x     = float(tokens[1]) * 2;
-            float     y     = float(tokens[2]) * 2;
-            float     span  = float(tokens[3]);
+            int row = idx / 25;
+            int col = idx % 25;
 
-            (*this)[int(x)][int(y)] = block;
-    
-            idx = 0;
+            m_data[row][col] = BLOCK_DIRT;
         }
+
+        idx += 1;
     }
+    std::cout << "Loaded file\n";
 
 
     stream.close();
@@ -49,41 +50,40 @@ Environment::loadFile( const std::string &filepath )
 bool
 Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist, int &block )
 {
-    float x = origin.x;
-    float y = origin.y;
+    float x = 16.0f * origin.x;
+    float y = 16.0f * origin.y;
 
-    float dx = dir.x;
-    float dy = dir.y;
+    // float dx = dir.x;
+    // float dy = dir.y;
 
-    float dydx = dy/dx;
-    float dxdy = dx/dy;
+    // float dydx = dy/dx;
+    // float dxdy = dx/dy;
 
-    float xstep = 0.0f;
-    float ystep = 0.0f;
+    // float xstep = 0.0f;
+    // float ystep = 0.0f;
 
-    float dxDist = 0.0f;
-    float dyDist = 0.0f;
+    // float dxDist = 0.0f;
+    // float dyDist = 0.0f;
 
-    for (int i=0; i<64; i++)
-    {
-        if (dxDist < dyDist)
-        {
-            xstep = 1.0f;
-            ystep = dydx;
-            dxDist += 1.0f;
-        }
+    // for (int i=0; i<64; i++)
+    // {
+    //     if (dxDist < dyDist)
+    //     {
+    //         xstep = 1.0f;
+    //         ystep = dydx;
+    //         dxDist += 1.0f;
+    //     }
 
-        else
-        {
-            xstep = dxdy;
-            ystep = 1.0f;
-            dyDist += 1.0f;
-        }
+    //     else
+    //     {
+    //         xstep = dxdy;
+    //         ystep = 1.0f;
+    //         dyDist += 1.0f;
+    //     }
 
-        x += xstep;
-        y += ystep;
-    }
-
+    //     x += xstep;
+    //     y += ystep;
+    // }
 
     for (int i=0; i<64; i++)
     {
@@ -92,79 +92,53 @@ Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist
         int x = int(pos.x);
         int y = int(pos.y);
     
-        if ((*this)[y][x] != BLOCK_NONE)
+        if (x < 0 || x >= m_data.size() || y < 0 || y >= m_data.size())
+        {
+            return false;
+        }
+
+        if (m_data[y][x] != BLOCK_NONE)
         {
             dist  = glm::distance(origin, pos);
-            block = int((*this)[y][x]);
+            block = int(m_data[y][x]);
             return true;
         }
     }
 }
 
 
-#ifdef ENVIRONMENT_VISUALISATION
 void
 Environment::render( SDL_Renderer *ren, const View &view )
 {
     const glm::vec2 P = view.position;
-    const glm::vec2 R = glm::vec2(view.resolution);
-    const float     S = view.scale;
-    const int       W = m_chunk_w;
+    const int       W = m_data.size();
 
-    for (auto &[key, chunk]: m_chunks)
+    int xmin = 0 - int(P.x) + (view.resolution.x/2);
+    int ymin = 0 - int(P.y) + (view.resolution.y/2);
+
+    for (int i=0; i<W; i++)
     {
-        int width  = R.x / S;
-        int height = R.y / S;
-        int xmin   = W*key.second - int(S*P.x) + width/2;
-        int ymin   = W*key.first  - int(S*P.y) + height/2;
-
-        for (int i=0; i<W; i++)
+        for (int j=0; j<W; j++)
         {
-            for (int j=0; j<W; j++)
-            {
-                SDL_Rect rect = {
-                    .x = xmin + j,
-                    .y = ymin + i,
-                    .w = 1,
-                    .h = 1
-                };
+            SDL_Rect rect = {
+                .x = xmin + 32*j,
+                .y = ymin + 32*i,
+                .w = 32,
+                .h = 32
+            };
 
-                glm::ivec3 color = BlockColors[int(chunk[i][j])];
-                SDL_SetRenderDrawColor(ren, color.r, color.g, color.b, 255);
-                SDL_RenderFillRect(ren, &rect);
-            }
+            glm::ivec3 color = BlockColors[m_data[i][j]];
+            SDL_SetRenderDrawColor(ren, color.r, color.g, color.b, 255);
+            SDL_RenderFillRect(ren, &rect);
         }
     }
 }
-#endif
 
 
-
-BlockType &
-Environment::Accessor::operator [] ( int col )
-{
-    const int W = m_env.m_chunk_w;
-
-    int grid_row = (int)floor(m_row / float(W));
-    int grid_col = (int)floor(col / float(W));
-
-    int rel_row = m_row - W*grid_row;
-    int rel_col = col - W*grid_col;
-
-    auto key = std::make_pair(grid_row, grid_col);
-
-    if (m_env.m_chunks.find(key) == m_env.m_chunks.end())
-    {
-        m_env.m_chunks[key] = Chunk(W);
-    }
-
-    return m_env.m_chunks[key][rel_row][rel_col];
-}
-
-
-Environment::Accessor
+std::vector<BlockType> &
 Environment::operator [] ( int row )
 {
-    return {*this, row};
-};
+    return m_data[row];
+}
+
 

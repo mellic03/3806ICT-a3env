@@ -59,6 +59,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
+  motors.srv
   sonars.srv
 )
 
@@ -224,6 +225,7 @@ include_directories(${SDL2_INCLUDE_DIRS})
 add_executable(
   a3env
   ${CMAKE_CURRENT_SOURCE_DIR}/src/a3env.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/render.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/environment.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mazegen.cpp
 )

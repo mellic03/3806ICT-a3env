@@ -5,8 +5,7 @@
 #include <vector>
 #include <map>
 
-#include <glm/glm.hpp>
-#include <SDL2/SDL.h>
+#include "render.hpp"
 
 
 enum BlockType
@@ -35,47 +34,15 @@ constexpr glm::ivec3 BlockColors[9] = {
 };
 
 
-struct View
-{
-    glm::vec2  position;
-    glm::ivec2 resolution;
-    int        scale;
-};
-
-
-struct Chunk
-{
-    std::vector<std::vector<BlockType>> data;
-
-    Chunk(): data(128, std::vector<BlockType>(128, BLOCK_NONE)) {  };
-
-    Chunk( int width ): data(width, std::vector<BlockType>(width, BLOCK_NONE))
-    {
-        
-    };
-
-    std::vector<BlockType> &operator [] (int i)
-    {
-        return data[i];
-    };
-};
-
-
 class Environment
 {
 private:
-    struct Accessor;
-
-    using key_type = std::pair<int, int>;
-    std::map<key_type, Chunk> m_chunks;
-
-    const int m_chunk_w;
-
+    std::vector<std::vector<BlockType>> m_data;
 
 public:
-             Environment( int chunk_width );
+             Environment( int width );
     void     loadFile( const std::string& );
-    Accessor operator [] ( int row );
+    std::vector<BlockType> &operator [] ( int row );
 
     /** Raycast against the grid using the DDA algorithm. */
     bool raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist, int &block );
@@ -84,12 +51,6 @@ public:
 };
 
 
-struct Environment::Accessor
-{
-    Environment &m_env;
-    int          m_row;
 
-    BlockType &operator [] ( int col );
-};
 
 

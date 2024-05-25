@@ -176,15 +176,12 @@ void renderLoop( SDL_Renderer *&ren, View &view )
         environment.render(ren, view);
 
 
-        for (Agent agent: agents)
+        for (Agent &agent: agents)
         {
             renderAgent(ren, view, agent);
 
             glm::vec2 dir = glm::vec2(cos(agent.bearing), sin(agent.bearing));
             agent.position += dir*agent.velocity;
-    
-            std::cout << agent.velocity << "\n";
-            std::cout << agent.position.x << "\n\n";
         }
 
 

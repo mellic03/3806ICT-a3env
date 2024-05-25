@@ -14,11 +14,11 @@ struct View
 };
 
 
-void renderRect( SDL_Renderer*, View&, glm::vec2, glm::vec2, const glm::ivec3 &color );
+void renderRect( SDL_Renderer*, const View&, glm::vec2, glm::vec2, const glm::ivec3 &color );
 
 
 
-void renderAgent( SDL_Renderer*, View&, Agent& );
+void renderAgent( SDL_Renderer*, const View&, Agent& );
 
 
 

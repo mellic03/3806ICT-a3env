@@ -1,7 +1,7 @@
 # request
 int32 agentid
-float32 velocity
-float32 bearing
+float32 linear
+float32 angular
 
 ---
 

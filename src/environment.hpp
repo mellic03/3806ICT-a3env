@@ -48,6 +48,8 @@ public:
     bool raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist, int &block );
     void render( SDL_Renderer*, const View& );
 
+    void updateAgents( std::vector<Agent> &agents );
+
 };
 
 

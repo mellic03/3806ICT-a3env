@@ -16,7 +16,7 @@ bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
 bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res );
 
 
-static constexpr size_t NUM_AGENTS = 15;
+static constexpr size_t NUM_AGENTS = 5;
 static constexpr size_t MAP_WIDTH  = 30;
 
 static std::vector<Agent> agents(NUM_AGENTS);
@@ -44,12 +44,12 @@ int main( int argc, char **argv )
         int r = i / 3;
         int c = i % 3;
 
-        agents[i].position = glm::vec2(1.2*float(2 + r), 1.2*float(2 + c));
+        agents[i].position = glm::vec2(1.2*float(1 + r/2.0f), 1.2*float(1 + c/2.0f));
+        agents[i].linear   = 0.0f;
+        agents[i].angular  = 0.0f;
         agents[i].bearing  = 0.0f;
-        agents[i].velocity = 0.0f;
     }
 
-    // sonarServiceClient = n.serviceClient<a3env::sonars>("/ree/roo");
     ros::ServiceServer service1 = n.advertiseService("a3env/sonars", sonar_callback);
     ros::ServiceServer service2 = n.advertiseService("a3env/motors", motor_callback);
     // --------------------------------------------------------------------------
@@ -73,14 +73,35 @@ int main( int argc, char **argv )
 
     while (ros::ok())
     {
-        ros::spinOnce();
+
         renderLoop(ren, view);
+        ros::spinOnce();
     }
 
 
     return 0;
 }
 
+
+
+bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
+{
+    if (req.agentid < 0 || req.agentid >= NUM_AGENTS)
+    {
+        return false;
+    }
+
+    glm::vec2 pos = agents[req.agentid].position;
+    float bearing = agents[req.agentid].bearing;
+    glm::vec2 dir = glm::normalize(glm::vec2(cos(bearing), sin(bearing)));
+
+    if (environment.raycast(pos, dir, res.distance, res.blocktype))
+    {
+        return true;
+    }
+
+    return false;
+}
 
 
 bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res )
@@ -90,32 +111,11 @@ bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res )
         return false;
     }
 
-    agents[req.agentid].bearing  = req.bearing;
-    agents[req.agentid].velocity = req.velocity;
+    agents[req.agentid].angular = req.angular;
+    agents[req.agentid].linear  = req.linear;
 
     return true;
 }
-
-
-bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
-{
-    glm::vec2 pos = agents[req.agentid].position;
-    float bearing = agents[req.agentid].bearing;
-    glm::vec2 dir = glm::vec2(cos(bearing), sin(bearing));
-
-    float dist;
-    int   block;
-
-    if (environment.raycast(pos, dir, dist, block))
-    {
-        res.distance  = dist;
-        res.blocktype = block;
-        return true;
-    }
-
-    return false;
-}
-
 
 
 void initWindow( SDL_Window *&win, SDL_Renderer *&ren, View &view )
@@ -135,7 +135,6 @@ void initWindow( SDL_Window *&win, SDL_Renderer *&ren, View &view )
     // SDL_RenderSetIntegerScale(ren, SDL_TRUE);
     SDL_RenderSetScale(ren, view.scale, view.scale);
 }
-
 
 
 void renderLoop( SDL_Renderer *&ren, View &view )
@@ -174,16 +173,12 @@ void renderLoop( SDL_Renderer *&ren, View &view )
         SDL_RenderClear(ren);
 
         environment.render(ren, view);
-
-
+        environment.updateAgents(agents);
+    
         for (Agent &agent: agents)
         {
             renderAgent(ren, view, agent);
-
-            glm::vec2 dir = glm::vec2(cos(agent.bearing), sin(agent.bearing));
-            agent.position += dir*agent.velocity;
         }
-
 
         SDL_RenderPresent(ren);
     }

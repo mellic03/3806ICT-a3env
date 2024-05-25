@@ -6,8 +6,10 @@
 struct Agent
 {
     glm::vec2 position;
-    float     velocity;
     float     bearing;
+
+    float     linear;
+    float     angular;
 };
 
 

@@ -106,8 +106,6 @@ bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
     float dist;
     int   block;
 
-    std::cout << "WOOP" << req.agentid << "\n";
-
     if (environment.raycast(pos, dir, dist, block))
     {
         res.distance  = dist;
@@ -181,6 +179,12 @@ void renderLoop( SDL_Renderer *&ren, View &view )
         for (Agent agent: agents)
         {
             renderAgent(ren, view, agent);
+
+            glm::vec2 dir = glm::vec2(cos(agent.bearing), sin(agent.bearing));
+            agent.position += dir*agent.velocity;
+    
+            std::cout << agent.velocity << "\n";
+            std::cout << agent.position.x << "\n\n";
         }
 
 

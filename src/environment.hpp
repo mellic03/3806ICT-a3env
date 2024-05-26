@@ -10,8 +10,8 @@
 
 enum BlockType
 {
-    BLOCK_NONE,
-    BLOCK_GRASS,
+    BLOCK_NONE  = 0,
+    BLOCK_GRASS = 1,
     BLOCK_DIRT,
     BLOCK_STONE,
     BLOCK_SILVER, 
@@ -21,30 +21,19 @@ enum BlockType
     BLOCK_REE2
 };
 
-constexpr glm::ivec3 BlockColors[9] = {
-    glm::ivec3(0, 155, 200),
-    glm::ivec3(100, 155, 85),
-    glm::ivec3(177, 127, 88),
-    glm::ivec3(170, 178, 181),
-    glm::ivec3(170, 178, 181),
-    glm::ivec3(220, 165, 18),
-    glm::ivec3(220, 165, 18),
-    glm::ivec3(220, 165, 18),
-    glm::ivec3(220, 165, 18)
-};
 
 
 class Environment
 {
 private:
-    std::vector<std::vector<BlockType>> m_data;
 
 public:
+    std::vector<std::vector<uint8_t>> m_data;
+
              Environment( int width );
     void     loadFile( const std::string& );
-    std::vector<BlockType> &operator [] ( int row );
+    std::vector<uint8_t> &operator [] ( int row );
 
-    /** Raycast against the grid using the DDA algorithm. */
     bool raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist, int &block );
     void render( SDL_Renderer*, const View& );
 

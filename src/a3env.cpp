@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include "a3env/sonars.h"
 #include "a3env/motors.h"
+#include "a3env/odom.h"
 
 #include "environment.hpp"
 #include "agent.hpp"
@@ -12,17 +13,18 @@ void initWindow( SDL_Window*&, SDL_Renderer*&, View& );
 void renderLoop( SDL_Renderer*&, View& );
 void keyInput( View &view );
 
-bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res );
-bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res );
+void updateEnvironment();
+bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res );
 
 
-static constexpr size_t NUM_AGENTS = 5;
-static constexpr size_t MAP_WIDTH  = 30;
+static constexpr size_t NUM_AGENTS = 6;
+static constexpr size_t MAP_WIDTH  = 12;
 
 static std::vector<Agent> agents(NUM_AGENTS);
 static Environment environment(MAP_WIDTH);
 
-// ros::ServiceClient sonarServiceClient;
+static std::vector<ros::Publisher> sonars_pub(NUM_AGENTS);
+static std::vector<ros::Publisher> odom_pub(NUM_AGENTS);
 
 
 
@@ -41,6 +43,16 @@ int main( int argc, char **argv )
 
     for (int i=0; i<NUM_AGENTS; i++)
     {
+        std::string label1 = "a3env/sonars" + std::to_string(i);
+        std::string label2 = "a3env/odom" + std::to_string(i);
+
+        sonars_pub[i] = n.advertise<a3env::sonars>(label1, 512);
+        odom_pub[i]   = n.advertise<a3env::odom>(label2, 512);
+    }
+
+
+    for (int i=0; i<NUM_AGENTS; i++)
+    {
         int r = i / 3;
         int c = i % 3;
 
@@ -50,10 +62,8 @@ int main( int argc, char **argv )
         agents[i].bearing  = 0.0f;
     }
 
-    ros::ServiceServer service1 = n.advertiseService("a3env/sonars", sonar_callback);
-    ros::ServiceServer service2 = n.advertiseService("a3env/motors", motor_callback);
+    ros::ServiceServer service = n.advertiseService("a3env/motors", motors_callback);
     // --------------------------------------------------------------------------
-
 
 
     // Rendering
@@ -64,17 +74,18 @@ int main( int argc, char **argv )
     View view = {
         .position   = glm::vec2(0.0f),
         .resolution = glm::ivec2(1024),
-        .scale      = 1
+        .scale      = 64
     };
 
     initWindow(window, ren, view);
     // --------------------------------------------------------------------------
 
+    ros::Rate rate(4);
 
     while (ros::ok())
     {
-
         renderLoop(ren, view);
+        updateEnvironment();
         ros::spinOnce();
     }
 
@@ -84,27 +95,44 @@ int main( int argc, char **argv )
 
 
 
-bool sonar_callback( a3env::sonars::Request &req, a3env::sonars::Response &res )
+void updateEnvironment()
 {
-    if (req.agentid < 0 || req.agentid >= NUM_AGENTS)
     {
-        return false;
+        static uint32_t a = SDL_GetTicks();
+        static uint32_t b = SDL_GetTicks();
+
+        a = SDL_GetTicks();
+        uint32_t delta = a - b;
+
+        if (delta < 1000.0/60.0)
+        {
+            return;
+        }
+        b = SDL_GetTicks();
     }
 
-    glm::vec2 pos = agents[req.agentid].position;
-    float bearing = agents[req.agentid].bearing;
-    glm::vec2 dir = glm::normalize(glm::vec2(cos(bearing), sin(bearing)));
 
-    if (environment.raycast(pos, dir, res.distance, res.blocktype))
+    environment.updateAgents(agents);
+
+    for (int i=0; i<NUM_AGENTS; i++)
     {
-        return true;
-    }
+        a3env::sonars S;
+        S.distance  = agents[i].sonar_dist;
+        S.blocktype = agents[i].sonar_block;
 
-    return false;
+        a3env::odom O;
+        O.xpos    = agents[i].position.x;
+        O.ypos    = agents[i].position.y;
+        O.bearing = agents[i].bearing;
+
+        sonars_pub[i].publish(S);
+        odom_pub[i].publish(O);
+    }
 }
 
 
-bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res )
+
+bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res )
 {
     if (req.agentid < 0 || req.agentid >= NUM_AGENTS)
     {
@@ -116,6 +144,7 @@ bool motor_callback( a3env::motors::Request &req, a3env::motors::Response &res )
 
     return true;
 }
+
 
 
 void initWindow( SDL_Window *&win, SDL_Renderer *&ren, View &view )
@@ -133,18 +162,16 @@ void initWindow( SDL_Window *&win, SDL_Renderer *&ren, View &view )
 
     ren = SDL_CreateRenderer(win, -1, 0);
     // SDL_RenderSetIntegerScale(ren, SDL_TRUE);
-    SDL_RenderSetScale(ren, view.scale, view.scale);
+    SDL_RenderSetScale(ren, 1, 1);
 }
 
 
 void renderLoop( SDL_Renderer *&ren, View &view )
 {
-    static uint32_t a = SDL_GetTicks();
-    static uint32_t b = SDL_GetTicks();
-
-
-    // while (true)
     {
+        static uint32_t a = SDL_GetTicks();
+        static uint32_t b = SDL_GetTicks();
+
         a = SDL_GetTicks();
         uint32_t delta = a - b;
 
@@ -153,42 +180,41 @@ void renderLoop( SDL_Renderer *&ren, View &view )
             return;
         }
         b = SDL_GetTicks();
-
-
-        SDL_Event e;
-
-        while (SDL_PollEvent(&e))
-        {
-            if ((e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) ||
-                (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) 
-            {
-                exit(0);
-            }
-        }
-        SDL_PumpEvents();
-
-        keyInput(view);
-
-        SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
-        SDL_RenderClear(ren);
-
-        environment.render(ren, view);
-        environment.updateAgents(agents);
-    
-        for (Agent &agent: agents)
-        {
-            renderAgent(ren, view, agent);
-        }
-
-        SDL_RenderPresent(ren);
     }
+
+
+    SDL_Event e;
+
+    while (SDL_PollEvent(&e))
+    {
+        if ((e.type == SDL_WINDOWEVENT && e.window.event == SDL_WINDOWEVENT_CLOSE) ||
+            (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) 
+        {
+            exit(0);
+        }
+    }
+    SDL_PumpEvents();
+
+    keyInput(view);
+
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    SDL_RenderClear(ren);
+
+    renderGrid(ren, view, environment.m_data);
+
+    for (Agent &agent: agents)
+    {
+        renderAgent(ren, view, agent); 
+    }
+
+    SDL_RenderPresent(ren);
 }
 
 
 
 void keyInput( View &view )
 {
-    const glm::vec2 speed = glm::vec2(2.5f) / float(view.scale);
+    const glm::vec2 speed = glm::vec2(2.5f);
 
     const uint8_t *state = SDL_GetKeyboardState(NULL);
 
@@ -196,4 +222,10 @@ void keyInput( View &view )
     if (state[SDL_SCANCODE_D])  view.position.x += speed.x;
     if (state[SDL_SCANCODE_W])  view.position.y -= speed.y;
     if (state[SDL_SCANCODE_S])  view.position.y += speed.y;
+
+    if (state[SDL_SCANCODE_UP])    view.scale += 1;
+    if (state[SDL_SCANCODE_DOWN])  view.scale -= 1;
+
+    view.scale = glm::clamp(view.scale, 8, 64);
+
 }

@@ -10,6 +10,9 @@ struct Agent
 
     float     linear;
     float     angular;
+
+    float     sonar_dist;
+    int       sonar_block;
 };
 
 

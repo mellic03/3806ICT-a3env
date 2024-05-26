@@ -50,17 +50,16 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  sonars.msg
+  odom.msg
+)
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   motors.srv
-  sonars.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -228,10 +227,6 @@ add_executable(
   ${CMAKE_CURRENT_SOURCE_DIR}/src/render.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/environment.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mazegen.cpp
-)
-
-target_compile_definitions(
-  a3env PUBLIC -DENVIRONMENT_VISUALISATION
 )
 
 target_link_libraries(

@@ -16,7 +16,8 @@
         "/home/michael/Desktop/3806ICT/catkin_ws/src/turtlebot3_simulations/turtlebot3_gazebo/include/**",
         "/home/michael/Desktop/3806ICT/catkin_ws/src/turtlesim_ex1/include/**",
         "/home/michael/Desktop/3806ICT/catkin_ws/src/week1/include/**",
-        "/usr/include/**"
+        "/usr/include/**",
+        "/usr/include/SDL2/*"
       ],
       "name": "ROS",
       "intelliSenseMode": "gcc-x64",

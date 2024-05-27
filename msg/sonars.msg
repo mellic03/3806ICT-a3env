@@ -1,2 +1,3 @@
 float32 distance
-int32   blocktype
+uint8   blocktype
+uint32  data

@@ -5,7 +5,7 @@
 
 
 Environment::Environment( int width )
-:   m_data(width, std::vector<uint8_t>(width, BLOCK_NONE))
+:   m_data(width, std::vector<uint8_t>(width, BLOCK_AIR))
 {
 
 }
@@ -29,7 +29,7 @@ Environment::loadFile( const std::string &filepath )
 
             if (!(row >= W || col >= W))
             {
-                m_data[row][col] = BLOCK_DIRT;
+                m_data[row][col] = BLOCK_WALL;
             }
         }
 
@@ -39,106 +39,128 @@ Environment::loadFile( const std::string &filepath )
 
     for (int i=0; i<W; i++)
     {
-        m_data[i][0]   = BLOCK_DIRT;
-        m_data[i][W-1] = BLOCK_DIRT;
-        m_data[0][i]   = BLOCK_DIRT;
-        m_data[W-1][i] = BLOCK_DIRT;
+        m_data[i][0]   = BLOCK_WALL;
+        m_data[i][W-1] = BLOCK_WALL;
+        m_data[0][i]   = BLOCK_WALL;
+        m_data[W-1][i] = BLOCK_WALL;
     }
 
     stream.close();
 }
 
-
-bool
-Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist, int &block )
+void
+Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist,
+                      uint8_t &block, uint32_t &data )
 {
-    float x = origin.x;
-    float y = origin.y;
+    glm::vec2 vRayUnitStepSize = {
+        sqrt(1 + (dir.y / dir.x) * (dir.y / dir.x)),
+        sqrt(1 + (dir.x / dir.y) * (dir.x / dir.y))
+    };
+
+    int row = int(origin.y);
+    int col = int(origin.x);
 
     float dx = dir.x;
     float dy = dir.y;
 
-    for (int i=0; i<64; i++)
-    {
-        x += dx;
-        y += dy;
+    float dxdist = 0.0f;
+    float dydist = 0.0f;
 
-        if (m_data[int(y)][int(x)] != BLOCK_NONE)
+    glm::vec2 vRayLength1D;
+    glm::ivec2 vStep;
+
+    if (dx < 0)
+    {
+        vStep.x = -1;
+        dxdist = (origin.x - col) * vRayUnitStepSize.x;
+    }
+
+    else
+    {
+        vStep.x = 1;
+        dxdist = (col+1 - origin.x) * vRayUnitStepSize.x;
+    }
+
+    if (dy < 0)
+    {
+        vStep.y = -1;
+        dydist = (origin.y - row) * vRayUnitStepSize.y;
+    }
+
+    else
+    {
+        vStep.y = 1;
+        dydist = (row+1 - origin.y) * vRayUnitStepSize.y;
+    }
+
+
+    dist = 0.0f;
+
+    while (dist < 2*m_data.size())
+    {
+        if (dxdist < dydist)
+        {
+            col += vStep.x;
+            dist = dxdist;
+            dxdist += vRayUnitStepSize.x;
+        }
+        else
+        {
+            row += vStep.y;
+            dist = dydist;
+            dydist += vRayUnitStepSize.y;
+        }
+
+        if (row < 0 || row >= m_data.size() || col < 0 || col>= m_data.size())
+        {
+            break;
+        }
+
+
+        // Hostile detection
+        // ---------------------------------------------------
+        auto key = std::make_pair(row, col);
+
+        if (m_hostile_positions[key].empty() == false)
+        {
+            uint32_t bitmask = 0;
+
+            for (Hostile *h: m_hostile_positions[key])
+            {
+                bitmask |= (1 << h->id);
+            }
+
+            block = BLOCK_HOSTILE;
+            data  = bitmask;
+            break;
+        }
+        // ---------------------------------------------------
+
+
+        if (m_data[row][col] != BLOCK_AIR)
         {
             break;
         }
     }
 
-    float direction = -1.0f;
-    float step = 0.5f;
-    int   current = m_data[int(y)][int(x)];
-
-    for (int i=0; i<64; i++)
-    {
-        x += direction*step*dx;
-        y += direction*step*dy;
-
-        if (m_data[int(y)][int(x)] != current)
-        {
-            current = m_data[int(y)][int(x)];
-            direction *= -1.0f;
-            step *= 0.5f;
-        }
-
-        if (step <= 0.01f)
-        {
-            break;
-        }
-    }
-
-    dist = glm::distance(origin, glm::vec2(x, y));
-    block = m_data[int(y)][int(x)];
-    m_data[int(y)][int(x)] = BLOCK_STONE;
-
-    return true;
-
-    return false;
-
 }
 
 
 void
-Environment::render( SDL_Renderer *ren, const View &view )
-{
-    const glm::vec2 P = view.position;
-    const int       W = m_data.size();
-
-    for (int i=0; i<W; i++)
-    {
-        for (int j=0; j<W; j++)
-        {
-            renderRect(
-                ren, view,
-                glm::vec2(32*j, 32*i),
-                glm::vec2(32.0f),
-                BlockColors[m_data[i][j]]
-            );
-
-        }
-    }
-}
-
-
-void
-Environment::updateAgents( std::vector<Agent> &agents )
+Environment::updateEntities( std::vector<Entity *> &entities )
 {
     // Update velocity
-    for (int i=0; i<agents.size(); i++)
+    for (int i=0; i<entities.size(); i++)
     {
-        Agent &agent = agents[i];
+        Entity *e = entities[i];
 
-        agent.bearing += agent.angular;
+        e->bearing += e->angular;
 
-        glm::vec2 dir  = agent.linear * glm::vec2(cos(agent.bearing), sin(agent.bearing));
-        glm::vec2 next = agent.position + dir;
+        glm::vec2 dir  = e->linear * glm::vec2(cos(e->bearing), sin(e->bearing));
+        glm::vec2 next = e->position + dir;
 
-        int x  = int(agent.position.x);
-        int y  = int(agent.position.y);
+        int x  = int(e->position.x);
+        int y  = int(e->position.y);
         int nx = int(next.x);
         int ny = int(next.y);
 
@@ -147,11 +169,11 @@ Environment::updateAgents( std::vector<Agent> &agents )
             continue;
         }
 
-        // Agent-agent collisions
+        // Entity-entity collisions
         bool good = true;
-        for (int j=0; j<agents.size(); j++)
+        for (int j=0; j<entities.size(); j++)
         {
-            if (i != j && glm::distance(next, agents[j].position) < 0.25f)
+            if (i != j && glm::distance(next, entities[j]->position) < 0.25f)
             {
                 good = false;
                 break;
@@ -163,21 +185,55 @@ Environment::updateAgents( std::vector<Agent> &agents )
             continue;
         }
 
-        if (m_data[ny][nx] == BLOCK_NONE)
+        if (m_data[ny][nx] == BLOCK_AIR)
         {
-            agent.position += dir*agent.linear;
+            e->position += dir*e->linear;
         }
-
     }
-
-    // Update sonar readings
-    for (Agent &agent: agents)
-    {
-        glm::vec2 dir = glm::vec2(cos(agent.bearing), sin(agent.bearing));
-        raycast(agent.position, dir, agent.sonar_dist, agent.sonar_block);
-    }
-
 }
+
+
+void
+Environment::updateAgents( std::vector<Agent *> &agents )
+{
+    // Update sonar readings
+    for (Agent *agent: agents)
+    {
+        glm::vec2 dir = glm::vec2(cos(agent->bearing), sin(agent->bearing));
+
+        raycast(
+            agent->position, dir,
+            agent->sonar_dist,
+            agent->sonar_block,
+            agent->sonar_data
+        );
+    }
+}
+
+
+void
+Environment::updateHostiles( std::vector<Hostile *> &hostiles )
+{
+    // Create map of (row, col) to list of hostiles at (row, col)
+
+    m_hostile_positions.clear();
+
+    for (Hostile *h: hostiles)
+    {
+        h->bearing += 0.25f * ((rand() % 100) / 100.0f - 0.5f);
+        // h->linear = 0.11f;
+
+
+        glm::vec2 pos = h->position;
+
+        int row  = int(pos.y);
+        int col  = int(pos.x);
+        auto key = std::make_pair(row, col);
+
+        m_hostile_positions[key].insert(h);
+    }
+}
+
 
 
 

@@ -4,21 +4,18 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
-#include "render.hpp"
+#include "entities.hpp"
 
 
 enum BlockType
 {
-    BLOCK_NONE  = 0,
-    BLOCK_GRASS = 1,
-    BLOCK_DIRT,
-    BLOCK_STONE,
-    BLOCK_SILVER, 
-    BLOCK_GOLD,
-    BLOCK_REE0,
-    BLOCK_REE1,
-    BLOCK_REE2
+    BLOCK_UNKNOWN  = 0,
+    BLOCK_AIR      = 1,
+    BLOCK_WALL     = 2,
+    BLOCK_SURVIVOR = 3,
+    BLOCK_HOSTILE  = 4
 };
 
 
@@ -26,6 +23,8 @@ enum BlockType
 class Environment
 {
 private:
+    std::map<std::pair<int, int>, std::set<Hostile *>> m_hostile_positions;
+
 
 public:
     std::vector<std::vector<uint8_t>> m_data;
@@ -34,10 +33,14 @@ public:
     void     loadFile( const std::string& );
     std::vector<uint8_t> &operator [] ( int row );
 
-    bool raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist, int &block );
-    void render( SDL_Renderer*, const View& );
+    void raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist,
+                  uint8_t &block, uint32_t &data );
 
-    void updateAgents( std::vector<Agent> &agents );
+
+
+    void updateEntities( std::vector<Entity *> &entities );
+    void updateAgents( std::vector<Agent *> &agents );
+    void updateHostiles( std::vector<Hostile *> &hostiles );
 
 };
 

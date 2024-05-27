@@ -1,6 +1,33 @@
 #include "render.hpp"
 
 
+constexpr glm::ivec3 BlockColors[9] = {
+    glm::ivec3(50),
+    glm::ivec3(0),
+    glm::ivec3(170, 178, 181),
+    glm::ivec3(0, 255, 0),
+    glm::ivec3(255, 0, 0)
+};
+
+
+constexpr glm::ivec3 EntityBodyColors[3] = {
+    // glm::ivec3(255, 0, 0),
+    // glm::ivec3(0, 255, 0),
+    glm::ivec3(100, 100, 0),
+    glm::ivec3(100, 100, 0),
+    glm::ivec3(0, 0, 255)
+};
+
+
+constexpr glm::ivec3 EntityHeadColors[3] = {
+    glm::ivec3(0, 255, 0),
+    glm::ivec3(255, 0, 0),
+    glm::ivec3(0, 0, 255)
+};
+
+
+
+
 void renderRect( SDL_Renderer *ren, const View &view, glm::vec2 pos, glm::vec2 extents, const glm::ivec3 &color )
 {
     int x = pos.x - view.position.x + (view.resolution.x / 2.0f);
@@ -42,22 +69,38 @@ void renderGrid( SDL_Renderer *ren, const View &view, const std::vector<std::vec
 
 
 
-
-void renderAgent( SDL_Renderer *ren, const View &view, Agent &agent )
+void renderEntity( SDL_Renderer *ren, const View &view, Entity *e )
 {
     const float S = view.scale;
+    const glm::vec2 pos = S * e->position;
 
-    glm::vec2 pos = S * agent.position;
-
-    glm::vec2 dir = glm::vec2(cos(agent.bearing), sin(agent.bearing));
+    glm::vec2 dir = glm::vec2(cos(e->bearing), sin(e->bearing));
     glm::vec2 head = pos + 4.0f*dir;
 
-    renderRect(ren, view, pos-glm::vec2(5.0f), glm::vec2(10.0f), glm::ivec3(255, 0, 0));
-    renderRect(ren, view, head-glm::vec2(2.5f), glm::vec2(5.0f), glm::ivec3(0, 255, 0));
+    renderRect(
+        ren, view,
+        pos-glm::vec2(5.0f),
+        glm::vec2(10.0f),
+        EntityBodyColors[int(e->type)]
+    );
 
-    glm::vec2 hit = pos + S * agent.sonar_dist * dir;
-    renderLine(ren, view, pos, hit);
+    renderRect(
+        ren, view,
+        head-glm::vec2(2.5f),
+        glm::vec2(5.0f),
+        EntityHeadColors[int(e->type)]
+    );
+
+
+    if (e->type == ENTITY_AGENT)
+    {
+        glm::vec2 hit = pos + S * (dynamic_cast<Agent *>(e))->sonar_dist * dir;
+        renderLine(ren, view, pos, hit);
+    }
+
 }
+
+
 
 
 void renderLine( SDL_Renderer *ren, const View &view,

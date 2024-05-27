@@ -3,6 +3,8 @@
 #include <fstream>
 #include <vector>
 
+using namespace a3env;
+
 
 Environment::Environment( int width )
 :   m_data(width, std::vector<uint8_t>(width, BLOCK_AIR))

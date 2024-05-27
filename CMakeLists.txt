@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_runtime
   roscpp
   rospy
+  roslib
   std_msgs
 )
 
@@ -232,6 +233,7 @@ add_executable(
 target_link_libraries(
   a3env
   ${catkin_LIBRARIES}
+  ${ROS_LIBS}
   ${SDL2_LIBRARIES}
 )
 

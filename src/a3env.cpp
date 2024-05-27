@@ -1,4 +1,6 @@
 #include <ros/ros.h>
+#include <ros/package.h>
+
 #include "a3env/sonars.h"
 #include "a3env/motors.h"
 #include "a3env/odom.h"
@@ -30,10 +32,12 @@ static std::vector<ros::Publisher> odom_pub(NUM_AGENTS);
 
 int main( int argc, char **argv )
 {
-    // Load environmentfrom file
+    // Load environment from file
     // --------------------------------------------------------------------------
-    environment.loadFile("./data/m2.txt");
+    std::string path = ros::package::getPath("a3env");
+    environment.loadFile(path + "/data/m2.txt");
     // --------------------------------------------------------------------------
+
 
 
     // ROS
@@ -80,7 +84,7 @@ int main( int argc, char **argv )
     initWindow(window, ren, view);
     // --------------------------------------------------------------------------
 
-    ros::Rate rate(4);
+    ros::Rate rate(1);
 
     while (ros::ok())
     {

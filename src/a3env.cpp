@@ -10,6 +10,10 @@
 #include "render.hpp"
 #include "mazegen.hpp"
 
+#include "common.hpp"
+using namespace a3env;
+
+
 
 void initWindow( SDL_Window*&, SDL_Renderer*&, View& );
 void renderLoop( SDL_Renderer*&, View& );
@@ -19,21 +23,14 @@ void updateEnvironment();
 bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res );
 
 
-static constexpr size_t NUM_AGENTS   = 6;
-static constexpr size_t NUM_HOSTILES = 6;
-static constexpr size_t NUM_ENTITIES = NUM_AGENTS + NUM_HOSTILES;
-static constexpr size_t MAP_WIDTH    = 12;
 
+static std::vector<Entity *>        entities;
+static std::vector<Agent *>         agents;
+static std::vector<Hostile *>       hostiles;
 
-std::vector<Entity *>   entities;
-std::vector<Agent *>    agents;
-std::vector<Hostile *>  hostiles;
-
-
-static Environment environment(MAP_WIDTH);
-
-static std::vector<ros::Publisher> sonars_pub(NUM_AGENTS);
-static std::vector<ros::Publisher> odom_pub(NUM_AGENTS);
+static Environment                  environment (MAP_WIDTH);
+static std::vector<ros::Publisher>  sonars_pub  (NUM_AGENTS);
+static std::vector<ros::Publisher>  odom_pub    (NUM_AGENTS);
 
 
 

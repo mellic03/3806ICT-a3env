@@ -6,17 +6,9 @@
 #include <map>
 #include <set>
 
+
+#include "common.hpp"
 #include "entities.hpp"
-
-
-enum BlockType
-{
-    BLOCK_UNKNOWN  = 0,
-    BLOCK_AIR      = 1,
-    BLOCK_WALL     = 2,
-    BLOCK_SURVIVOR = 3,
-    BLOCK_HOSTILE  = 4
-};
 
 
 

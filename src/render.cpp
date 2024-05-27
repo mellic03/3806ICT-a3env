@@ -28,20 +28,32 @@ constexpr glm::ivec3 EntityHeadColors[3] = {
 
 
 
-void renderRect( SDL_Renderer *ren, const View &view, glm::vec2 pos, glm::vec2 extents, const glm::ivec3 &color )
+void renderRect( SDL_Renderer *ren, const View &view, glm::vec2 pos, glm::vec2 extents,
+                 const glm::ivec4 &color )
 {
-    int x = pos.x - view.position.x + (view.resolution.x / 2.0f);
-    int y = pos.y - view.position.y + (view.resolution.y / 2.0f);
+    const float S = view.scale;
+
+    int x = S*(pos.x - view.position.x) + (view.resolution.x / 2.0f);
+    int y = S*(pos.y - view.position.y) + (view.resolution.y / 2.0f);
+
+    int w = S*extents.x;
+    int h = S*extents.y;
 
     SDL_Rect rect = {
         .x = x,
         .y = y,
-        .w = int(extents.x),
-        .h = int(extents.y)
+        .w = w,
+        .h = h
     };
 
-    SDL_SetRenderDrawColor(ren, color.r, color.g, color.b, 255);
+    SDL_SetRenderDrawColor(ren, color.r, color.g, color.b, color.a);
     SDL_RenderFillRect(ren, &rect);
+}
+
+void renderRect( SDL_Renderer *ren, const View &view, glm::vec2 pos, glm::vec2 extents,
+                 const glm::ivec3 &color )
+{
+    renderRect(ren, view, pos, extents, glm::ivec4(color, 255));
 }
 
 
@@ -58,8 +70,8 @@ void renderGrid( SDL_Renderer *ren, const View &view, const std::vector<std::vec
         {
             renderRect(
                 ren, view,
-                glm::vec2(S*j, S*i),
-                glm::vec2(S),
+                glm::vec2(j, i),
+                glm::vec2(1.0f),
                 BlockColors[grid[i][j]]
             );
 
@@ -71,30 +83,32 @@ void renderGrid( SDL_Renderer *ren, const View &view, const std::vector<std::vec
 
 void renderEntity( SDL_Renderer *ren, const View &view, Entity *e )
 {
-    const float S = view.scale;
-    const glm::vec2 pos = S * e->position;
+    constexpr float body_w = 0.25f;
+    constexpr float head_w = 0.75f*body_w;
+
+    const glm::vec2 pos = e->position;
 
     glm::vec2 dir = glm::vec2(cos(e->bearing), sin(e->bearing));
-    glm::vec2 head = pos + 4.0f*dir;
+    glm::vec2 head = pos + (head_w/2.0f)*dir;
 
     renderRect(
         ren, view,
-        pos-glm::vec2(5.0f),
-        glm::vec2(10.0f),
+        pos - glm::vec2(body_w/2.0f),
+        glm::vec2(body_w),
         EntityBodyColors[int(e->type)]
     );
 
     renderRect(
         ren, view,
-        head-glm::vec2(2.5f),
-        glm::vec2(5.0f),
+        head - glm::vec2(head_w/2.0f),
+        glm::vec2(head_w),
         EntityHeadColors[int(e->type)]
     );
 
 
     if (e->type == ENTITY_AGENT)
     {
-        glm::vec2 hit = pos + S * (dynamic_cast<Agent *>(e))->sonar_dist * dir;
+        glm::vec2 hit = pos + (dynamic_cast<Agent *>(e))->sonar_dist * dir;
         renderLine(ren, view, pos, hit);
     }
 
@@ -106,12 +120,13 @@ void renderEntity( SDL_Renderer *ren, const View &view, Entity *e )
 void renderLine( SDL_Renderer *ren, const View &view,
                  const glm::vec2 &A, const glm::vec2 &B )
 {
-    int x0 = A.x - view.position.x + (view.resolution.x / 2.0f);
-    int y0 = A.y - view.position.y + (view.resolution.y / 2.0f);
-    int x1 = B.x - view.position.x + (view.resolution.x / 2.0f);
-    int y1 = B.y - view.position.y + (view.resolution.y / 2.0f);
+    const float S = view.scale;
+
+    int x0 = S*(A.x - view.position.x) + (view.resolution.x / 2.0f);
+    int y0 = S*(A.y - view.position.y) + (view.resolution.y / 2.0f);
+    int x1 = S*(B.x - view.position.x) + (view.resolution.x / 2.0f);
+    int y1 = S*(B.y - view.position.y) + (view.resolution.y / 2.0f);
 
     SDL_RenderDrawLine(ren, x0, y0, x1, y1);
-
 }
 

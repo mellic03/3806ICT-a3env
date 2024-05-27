@@ -18,6 +18,7 @@ using namespace a3env;
 void initWindow( SDL_Window*&, SDL_Renderer*&, View& );
 void renderLoop( SDL_Renderer*&, View& );
 void keyInput( View &view );
+void mouseInput( SDL_Renderer*, View& );
 
 void updateEnvironment();
 bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res );
@@ -107,7 +108,7 @@ int main( int argc, char **argv )
     View view = {
         .position   = glm::vec2(0.0f),
         .resolution = glm::ivec2(1024),
-        .scale      = 64
+        .scale      = 1.0f
     };
 
     initWindow(window, ren, view);
@@ -196,6 +197,7 @@ void initWindow( SDL_Window *&win, SDL_Renderer *&ren, View &view )
 
     ren = SDL_CreateRenderer(win, -1, 0);
     // SDL_RenderSetIntegerScale(ren, SDL_TRUE);
+    SDL_SetRenderDrawBlendMode(ren, SDL_BLENDMODE_BLEND);
     SDL_RenderSetScale(ren, 1, 1);
 }
 
@@ -229,22 +231,20 @@ void renderLoop( SDL_Renderer *&ren, View &view )
     }
     SDL_PumpEvents();
 
-    keyInput(view);
+
 
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
     SDL_RenderClear(ren);
 
+    keyInput(view);
     renderGrid(ren, view, environment.m_data);
+    mouseInput(ren, view);
 
 
     for (Entity *e: entities)
     {
         renderEntity(ren, view, e); 
     }
-    // for (Agent *agent: agents)
-    // {
-    //     renderEntity(ren, view, dynamic_cast<Entity *>(agent)); 
-    // }
 
     SDL_RenderPresent(ren);
 }
@@ -253,18 +253,72 @@ void renderLoop( SDL_Renderer *&ren, View &view )
 
 void keyInput( View &view )
 {
-    const glm::vec2 speed = glm::vec2(2.5f);
-
     const uint8_t *state = SDL_GetKeyboardState(NULL);
+    glm::vec2 speed = glm::vec2(5.0f) / view.scale;
 
-    if (state[SDL_SCANCODE_A])  view.position.x -= speed.x;
-    if (state[SDL_SCANCODE_D])  view.position.x += speed.x;
-    if (state[SDL_SCANCODE_W])  view.position.y -= speed.y;
-    if (state[SDL_SCANCODE_S])  view.position.y += speed.y;
+    if (state[SDL_SCANCODE_LSHIFT]) speed *= 2.0f;
+    if (state[SDL_SCANCODE_A])      view.position.x -= speed.x;
+    if (state[SDL_SCANCODE_D])      view.position.x += speed.x;
+    if (state[SDL_SCANCODE_W])      view.position.y -= speed.y;
+    if (state[SDL_SCANCODE_S])      view.position.y += speed.y;
+    if (state[SDL_SCANCODE_UP])     view.scale += 1.0f;
+    if (state[SDL_SCANCODE_DOWN])   view.scale -= 1.0f;
 
-    if (state[SDL_SCANCODE_UP])    view.scale += 1;
-    if (state[SDL_SCANCODE_DOWN])  view.scale -= 1;
-
-    view.scale = glm::clamp(view.scale, 8, 64);
+    view.scale = glm::clamp(view.scale, 32.0f, 128.0f);
 
 }
+
+
+void mouseInput( SDL_Renderer *ren, View &view )
+{
+    bool prev_down = view.mouse_down;
+    view.mouse_clicked = false;
+
+    if (SDL_GetMouseState(&view.mouse_screen.x, &view.mouse_screen.y) && SDL_BUTTON_LMASK)
+    {
+        view.mouse_down = true;
+    }
+
+    else
+    {
+        view.mouse_down = false;
+    }
+
+    if (prev_down == true && view.mouse_down == false)
+    {
+        view.mouse_clicked = true;
+    }
+
+
+    const float S = view.scale;
+
+    glm::vec2 res    = glm::vec2(view.resolution);
+    glm::vec2 screen = glm::vec2(view.mouse_screen);
+
+    view.mouse_world = (1.0f/S) * (screen - res/2.0f) + view.position;
+
+    glm::vec2 mouse = view.mouse_world;
+
+    int row = int(view.mouse_world.y);
+    int col = int(view.mouse_world.x);
+
+    renderRect(
+        ren, view, glm::vec2(col, row),
+        glm::vec2(1.0f),
+        glm::ivec4(255, 255, 255, 50)
+    );
+
+    // for (Agent *agent: agents)
+    // {
+    //     if (glm::distance(mouse, agent->position) < 0.25f)
+    //     {
+    //         if (view.mouse_clicked)
+    //         {
+    //             renderRect(ren, view, agent->position, glm::vec2(0.25f), glm::ivec3(255));
+    //         }
+    //     }
+    // }
+
+}
+
+

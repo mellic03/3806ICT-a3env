@@ -1,8 +1,8 @@
 #include "render.hpp"
-
+#include "common.hpp"
 
 constexpr glm::ivec3 BlockColors[9] = {
-    glm::ivec3(50),
+    glm::ivec3(20),
     glm::ivec3(0),
     glm::ivec3(170, 178, 181),
     glm::ivec3(0, 255, 0),
@@ -83,8 +83,8 @@ void renderGrid( SDL_Renderer *ren, const View &view, const std::vector<std::vec
 
 void renderEntity( SDL_Renderer *ren, const View &view, Entity *e )
 {
-    constexpr float body_w = 0.25f;
-    constexpr float head_w = 0.75f*body_w;
+    constexpr float body_w = a3env::ENTITY_BODY_W;
+    constexpr float head_w = a3env::ENTITY_HEAD_W;
 
     const glm::vec2 pos = e->position;
 

@@ -17,8 +17,10 @@ using namespace a3env;
 
 void initWindow( SDL_Window*&, SDL_Renderer*&, View& );
 void renderLoop( SDL_Renderer*&, View& );
-void keyInput( View &view );
-void mouseInput( SDL_Renderer*, View& );
+void renderUI( SDL_Renderer*, View& );
+
+void keyInput( View& );
+void mouseInput( View& );
 
 void updateEnvironment();
 bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res );
@@ -40,7 +42,7 @@ int main( int argc, char **argv )
     // Load environment from file
     // --------------------------------------------------------------------------
     std::string path = ros::package::getPath("a3env");
-    environment.loadFile(path + "/data/m2.txt");
+    environment.loadFile(path + "/data/m0.txt");
     // --------------------------------------------------------------------------
 
 
@@ -106,21 +108,22 @@ int main( int argc, char **argv )
     SDL_Renderer *ren;
 
     View view = {
-        .position   = glm::vec2(0.0f),
+        .position   = glm::vec2(a3env::MAP_WIDTH/2.0f),
         .resolution = glm::ivec2(1024),
-        .scale      = 1.0f
+        .scale      = 64.0f
     };
 
     initWindow(window, ren, view);
     // --------------------------------------------------------------------------
 
-    ros::Rate rate(1);
+    ros::Rate rate(60);
 
     while (ros::ok())
     {
+        ros::spinOnce();
+
         renderLoop(ren, view);
         updateEnvironment();
-        ros::spinOnce();
     }
 
     return 0;
@@ -151,14 +154,16 @@ void updateEnvironment()
     for (int i=0; i<NUM_AGENTS; i++)
     {
         a3env::sonars S;
+        S.timestamp = ros::Time::now().toNSec();
         S.distance  = agents[i]->sonar_dist;
         S.blocktype = agents[i]->sonar_block;
         S.data      = agents[i]->sonar_data;
 
         a3env::odom O;
-        O.xpos    = agents[i]->position.x;
-        O.ypos    = agents[i]->position.y;
-        O.bearing = agents[i]->bearing;
+        O.timestamp = ros::Time::now().toNSec();
+        O.xpos      = agents[i]->position.x;
+        O.ypos      = agents[i]->position.y;
+        O.bearing   = agents[i]->bearing;
 
         sonars_pub[i].publish(S);
         odom_pub[i].publish(O);
@@ -174,7 +179,7 @@ bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res 
         return false;
     }
 
-    agents[req.agentid]->angular = req.angular;
+    agents[req.agentid]->bearing = req.bearing;
     agents[req.agentid]->linear  = req.linear;
 
     return true;
@@ -237,8 +242,9 @@ void renderLoop( SDL_Renderer *&ren, View &view )
     SDL_RenderClear(ren);
 
     keyInput(view);
+    mouseInput(view);
     renderGrid(ren, view, environment.m_data);
-    mouseInput(ren, view);
+    renderUI(ren, view);
 
 
     for (Entity *e: entities)
@@ -247,6 +253,32 @@ void renderLoop( SDL_Renderer *&ren, View &view )
     }
 
     SDL_RenderPresent(ren);
+}
+
+
+void renderUI( SDL_Renderer *ren, View &view )
+{
+    glm::vec2 mouse = view.mouse_world;
+
+    renderRect(
+        ren, view,
+        glm::floor(view.mouse_world),
+        glm::vec2(1.0f),
+        glm::ivec4(255, 255, 255, 50)
+    );
+
+    // for (Agent *agent: agents)
+    // {
+    //     if (glm::distance(mouse, agent->position) < 0.25f)
+    //     {
+    //         renderRect(
+    //             ren, view,
+    //             agent->position - glm::vec2(0.25f),
+    //             glm::vec2(0.5f),
+    //             glm::ivec4(255, 255, 255, 100)
+    //         );
+    //     }
+    // }
 }
 
 
@@ -269,7 +301,7 @@ void keyInput( View &view )
 }
 
 
-void mouseInput( SDL_Renderer *ren, View &view )
+void mouseInput( View &view )
 {
     bool prev_down = view.mouse_down;
     view.mouse_clicked = false;
@@ -296,29 +328,6 @@ void mouseInput( SDL_Renderer *ren, View &view )
     glm::vec2 screen = glm::vec2(view.mouse_screen);
 
     view.mouse_world = (1.0f/S) * (screen - res/2.0f) + view.position;
-
-    glm::vec2 mouse = view.mouse_world;
-
-    int row = int(view.mouse_world.y);
-    int col = int(view.mouse_world.x);
-
-    renderRect(
-        ren, view, glm::vec2(col, row),
-        glm::vec2(1.0f),
-        glm::ivec4(255, 255, 255, 50)
-    );
-
-    // for (Agent *agent: agents)
-    // {
-    //     if (glm::distance(mouse, agent->position) < 0.25f)
-    //     {
-    //         if (view.mouse_clicked)
-    //         {
-    //             renderRect(ren, view, agent->position, glm::vec2(0.25f), glm::ivec3(255));
-    //         }
-    //     }
-    // }
-
 }
 
 

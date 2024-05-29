@@ -18,6 +18,9 @@ namespace a3env
     static constexpr size_t NUM_SURVIVORS = 0;
     static constexpr size_t MAP_WIDTH     = 12;
 
+    static constexpr float ENTITY_BODY_W = 0.25f;
+    static constexpr float ENTITY_HEAD_W = 0.75f*ENTITY_BODY_W;
+
 }
 
 

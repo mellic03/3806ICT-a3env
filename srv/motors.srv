@@ -1,7 +1,7 @@
 # request
 int32 agentid
 float32 linear
-float32 angular
+float32 bearing
 
 ---
 

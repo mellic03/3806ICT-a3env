@@ -31,7 +31,7 @@ Environment::loadFile( const std::string &filepath )
 
             if (!(row >= W || col >= W))
             {
-                m_data[row][col] = BLOCK_WALL;
+                m_data[row][col] = BLOCK_UNKNOWN;
             }
         }
 
@@ -41,10 +41,10 @@ Environment::loadFile( const std::string &filepath )
 
     for (int i=0; i<W; i++)
     {
-        m_data[i][0]   = BLOCK_WALL;
-        m_data[i][W-1] = BLOCK_WALL;
-        m_data[0][i]   = BLOCK_WALL;
-        m_data[W-1][i] = BLOCK_WALL;
+        m_data[i][0]   = BLOCK_UNKNOWN;
+        m_data[i][W-1] = BLOCK_UNKNOWN;
+        m_data[0][i]   = BLOCK_UNKNOWN;
+        m_data[W-1][i] = BLOCK_UNKNOWN;
     }
 
     stream.close();
@@ -141,6 +141,7 @@ Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist
 
         if (m_data[row][col] != BLOCK_AIR)
         {
+            m_data[row][col] = BLOCK_WALL;
             break;
         }
     }

@@ -15,7 +15,8 @@
 class Environment
 {
 private:
-    std::map<std::pair<int, int>, std::set<Hostile *>> m_hostile_positions;
+    std::map<std::pair<int, int>, std::set<Hostile *>>  m_hostile_positions;
+    std::map<std::pair<int, int>, std::set<Survivor *>> m_survivor_positions;
 
 
 public:
@@ -34,6 +35,7 @@ public:
     void updateEntities( std::vector<Entity *> &entities );
     void updateAgents( std::vector<Agent *> &agents );
     void updateHostiles( std::vector<Hostile *> &hostiles );
+    void updateSurvivors( std::vector<Survivor *> &survivors );
 
 };
 

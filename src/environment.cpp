@@ -141,10 +141,19 @@ Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist
         // ---------------------------------------------------
 
 
+        // Survivor detection
+        // ---------------------------------------------------
+        if (m_survivor_positions[key].empty() == false)
+        {
+            block = BLOCK_SURVIVOR;
+            break;
+        }
+        // ---------------------------------------------------
+
+
         if (m_data[row][col] == BLOCK_WALL)
         {
             block = BLOCK_WALL;
-            // m_data[row][col] = BLOCK_WALL;
             break;
         }
     }
@@ -152,45 +161,6 @@ Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist
     hit = glm::vec2(col, row);
 }
 
-
-void
-Environment::sonar( const glm::vec2 &origin, std::vector<uint8_t> &response,
-                    std::vector<uint32_t> &data )
-{
-
-    response.resize(3*3);
-
-    for (int i=-1; i<=1; i++)
-    {
-        for (int j=-1; j<=1; j++)
-        {
-            int row = int(origin.y) + i;
-            int col = int(origin.x) + j;
-
-
-            // Hostile detection
-            // ---------------------------------------------------
-            auto key = std::make_pair(row, col);
-
-            if (m_hostile_positions[key].empty() == false)
-            {
-                uint32_t bitmask = 0;
-
-                for (Hostile *h: m_hostile_positions[key])
-                {
-                    bitmask |= (1 << h->id);
-                }
-
-                response[3*row+col] = BLOCK_HOSTILE;
-                data[3*row+col] = bitmask;
-            }
-            // ---------------------------------------------------
-
-
-            response[3*row+col] = m_data[row][col];
-        }
-    }
-}
 
 
 
@@ -201,8 +171,6 @@ Environment::updateEntities( std::vector<Entity *> &entities )
     for (int i=0; i<entities.size(); i++)
     {
         Entity *e = entities[i];
-
-        // e->bearing += e->angular;
 
         glm::vec2 dir  = e->linear * glm::vec2(cos(e->bearing), sin(e->bearing));
         glm::vec2 next = e->position + dir;
@@ -274,7 +242,6 @@ Environment::updateHostiles( std::vector<Hostile *> &hostiles )
         h->bearing += 0.25f * ((rand() % 100) / 100.0f - 0.5f);
         // h->linear = 0.11f;
 
-
         glm::vec2 pos = h->position;
 
         int row  = int(pos.y);
@@ -286,6 +253,20 @@ Environment::updateHostiles( std::vector<Hostile *> &hostiles )
 }
 
 
+void
+Environment::updateSurvivors( std::vector<Survivor *> &survivors )
+{
+    m_survivor_positions.clear();
+
+    for (Survivor *e: survivors)
+    {
+        int row  = int(e->position.y);
+        int col  = int(e->position.x);
+        auto key = std::make_pair(row, col);
+
+        m_survivor_positions[key].insert(e);
+    }
+}
 
 
 std::vector<uint8_t> &

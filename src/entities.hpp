@@ -54,3 +54,10 @@ struct Hostile: public Entity
 };
 
 
+struct Survivor: public Entity
+{
+    Survivor( int entity_id ): Entity(entity_id, ENTITY_SURVIVOR) {  };
+
+};
+
+

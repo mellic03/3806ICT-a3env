@@ -11,8 +11,6 @@ constexpr glm::ivec3 BlockColors[9] = {
 
 
 constexpr glm::ivec3 EntityBodyColors[3] = {
-    // glm::ivec3(255, 0, 0),
-    // glm::ivec3(0, 255, 0),
     glm::ivec3(100, 100, 0),
     glm::ivec3(100, 100, 0),
     glm::ivec3(0, 0, 255)

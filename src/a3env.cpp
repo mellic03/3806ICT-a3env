@@ -29,6 +29,7 @@ void motors_callback( const a3env::motors &msg );
 static std::vector<Entity *>        entities;
 static std::vector<Agent *>         agents;
 static std::vector<Hostile *>       hostiles;
+static std::vector<Survivor *>      survivors;
 
 static Environment                  environment (MAP_WIDTH);
 static std::vector<ros::Publisher>  sonars_pub  (NUM_AGENTS);
@@ -60,6 +61,12 @@ int main( int argc, char **argv )
         hostiles.push_back(dynamic_cast<Hostile *>(entities.back()));
     }
 
+    for (int i=0; i<NUM_SURVIVORS; i++)
+    {
+        entities.push_back(new Survivor(i));
+        survivors.push_back(dynamic_cast<Survivor *>(entities.back()));
+    }
+
     for (int i=0; i<NUM_AGENTS; i++)
     {
         int r = i / 3;
@@ -81,6 +88,17 @@ int main( int argc, char **argv )
         hostiles[i]->linear   = 0.1f;
         hostiles[i]->angular  = 0.0f;
         hostiles[i]->bearing  = 0.0f;
+    }
+
+    for (int i=0; i<NUM_SURVIVORS; i++)
+    {
+        int r = i / 3;
+        int c = i % 3;
+
+        survivors[i]->position = glm::vec2(7.5f, 10.5f);
+        survivors[i]->linear   = 0.0f;
+        survivors[i]->angular  = 0.0f;
+        survivors[i]->bearing  = 0.0f;
     }
     // --------------------------------------------------------------------------
 
@@ -153,6 +171,7 @@ void updateEnvironment()
     environment.updateEntities(entities);
     environment.updateAgents(agents);
     environment.updateHostiles(hostiles);
+    environment.updateSurvivors(survivors);
 
     for (int i=0; i<NUM_AGENTS; i++)
     {

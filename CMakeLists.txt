@@ -59,10 +59,10 @@ add_message_files(
 )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-  FILES
-  # motors.srv
-)
+# add_service_files(
+#   FILES
+#   # motors.srv
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -220,6 +220,9 @@ include_directories(
 
 # a3env
 # ---------------------------------------------------------------
+set (CMAKE_CXX_FLAGS "-g")
+
+
 find_package(SDL2 REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS})
 

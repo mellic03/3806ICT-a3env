@@ -40,6 +40,8 @@ struct Agent: public Entity
     Agent( int entity_id ): Entity(entity_id, ENTITY_AGENT) {  };
 
     float      sonar_dist;
+    float      sonar_bearing;
+    glm::vec2  sonar_hit;
     uint8_t    sonar_block;
     uint32_t   sonar_data;
 };

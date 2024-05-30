@@ -108,7 +108,10 @@ void renderEntity( SDL_Renderer *ren, const View &view, Entity *e )
 
     if (e->type == ENTITY_AGENT)
     {
-        glm::vec2 hit = pos + (dynamic_cast<Agent *>(e))->sonar_dist * dir;
+        Agent *a = (Agent *)e;
+        glm::vec2 sdir = glm::vec2(cos(a->sonar_bearing), sin(a->sonar_bearing));
+
+        glm::vec2 hit = pos + (dynamic_cast<Agent *>(e))->sonar_dist * sdir;
         renderLine(ren, view, pos, hit);
     }
 

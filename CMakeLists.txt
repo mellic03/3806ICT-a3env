@@ -55,12 +55,13 @@ add_message_files(
   FILES
   sonars.msg
   odom.msg
+  motors.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
-  motors.srv
+  # motors.srv
 )
 
 ## Generate actions in the 'action' folder

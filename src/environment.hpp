@@ -26,8 +26,9 @@ public:
     std::vector<uint8_t> &operator [] ( int row );
 
     void raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist,
-                  uint8_t &block, uint32_t &data );
+                  glm::vec2 &hit, uint8_t &block, uint32_t &data );
 
+    void sonar( const glm::vec2 &origin, std::vector<uint8_t>&, std::vector<uint32_t>& );
 
 
     void updateEntities( std::vector<Entity *> &entities );

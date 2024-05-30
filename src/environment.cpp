@@ -31,7 +31,7 @@ Environment::loadFile( const std::string &filepath )
 
             if (!(row >= W || col >= W))
             {
-                m_data[row][col] = BLOCK_UNKNOWN;
+                m_data[row+0][col+0] = BLOCK_WALL;
             }
         }
 
@@ -41,18 +41,19 @@ Environment::loadFile( const std::string &filepath )
 
     for (int i=0; i<W; i++)
     {
-        m_data[i][0]   = BLOCK_UNKNOWN;
-        m_data[i][W-1] = BLOCK_UNKNOWN;
-        m_data[0][i]   = BLOCK_UNKNOWN;
-        m_data[W-1][i] = BLOCK_UNKNOWN;
+        m_data[i][0]   = BLOCK_WALL;
+        m_data[i][W-1] = BLOCK_WALL;
+        m_data[0][i]   = BLOCK_WALL;
+        m_data[W-1][i] = BLOCK_WALL;
     }
 
     stream.close();
 }
 
+
 void
 Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist,
-                      uint8_t &block, uint32_t &data )
+                      glm::vec2 &hit, uint8_t &block, uint32_t &data )
 {
     glm::vec2 vRayUnitStepSize = {
         sqrt(1 + (dir.y / dir.x) * (dir.y / dir.x)),
@@ -97,6 +98,7 @@ Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist
 
 
     dist = 0.0f;
+    block = BLOCK_UNKNOWN;
 
     while (dist < 2*m_data.size())
     {
@@ -139,14 +141,57 @@ Environment::raycast( const glm::vec2 &origin, const glm::vec2 &dir, float &dist
         // ---------------------------------------------------
 
 
-        if (m_data[row][col] != BLOCK_AIR)
+        if (m_data[row][col] == BLOCK_WALL)
         {
-            m_data[row][col] = BLOCK_WALL;
+            block = BLOCK_WALL;
+            // m_data[row][col] = BLOCK_WALL;
             break;
         }
     }
 
+    hit = glm::vec2(col, row);
 }
+
+
+void
+Environment::sonar( const glm::vec2 &origin, std::vector<uint8_t> &response,
+                    std::vector<uint32_t> &data )
+{
+
+    response.resize(3*3);
+
+    for (int i=-1; i<=1; i++)
+    {
+        for (int j=-1; j<=1; j++)
+        {
+            int row = int(origin.y) + i;
+            int col = int(origin.x) + j;
+
+
+            // Hostile detection
+            // ---------------------------------------------------
+            auto key = std::make_pair(row, col);
+
+            if (m_hostile_positions[key].empty() == false)
+            {
+                uint32_t bitmask = 0;
+
+                for (Hostile *h: m_hostile_positions[key])
+                {
+                    bitmask |= (1 << h->id);
+                }
+
+                response[3*row+col] = BLOCK_HOSTILE;
+                data[3*row+col] = bitmask;
+            }
+            // ---------------------------------------------------
+
+
+            response[3*row+col] = m_data[row][col];
+        }
+    }
+}
+
 
 
 void
@@ -157,7 +202,7 @@ Environment::updateEntities( std::vector<Entity *> &entities )
     {
         Entity *e = entities[i];
 
-        e->bearing += e->angular;
+        // e->bearing += e->angular;
 
         glm::vec2 dir  = e->linear * glm::vec2(cos(e->bearing), sin(e->bearing));
         glm::vec2 next = e->position + dir;
@@ -202,14 +247,17 @@ Environment::updateAgents( std::vector<Agent *> &agents )
     // Update sonar readings
     for (Agent *agent: agents)
     {
-        glm::vec2 dir = glm::vec2(cos(agent->bearing), sin(agent->bearing));
+        glm::vec2 dir = glm::vec2(cos(agent->sonar_bearing), sin(agent->sonar_bearing));
 
         raycast(
             agent->position, dir,
             agent->sonar_dist,
+            agent->sonar_hit,
             agent->sonar_block,
             agent->sonar_data
         );
+
+        agent->sonar_bearing += 0.05f;
     }
 }
 

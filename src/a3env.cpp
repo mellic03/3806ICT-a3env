@@ -23,8 +23,7 @@ void keyInput( View& );
 void mouseInput( View& );
 
 void updateEnvironment();
-bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res );
-
+void motors_callback( const a3env::motors &msg );
 
 
 static std::vector<Entity *>        entities;
@@ -34,6 +33,7 @@ static std::vector<Hostile *>       hostiles;
 static Environment                  environment (MAP_WIDTH);
 static std::vector<ros::Publisher>  sonars_pub  (NUM_AGENTS);
 static std::vector<ros::Publisher>  odom_pub    (NUM_AGENTS);
+static std::vector<ros::Subscriber> motors_sub  (NUM_AGENTS);
 
 
 
@@ -65,10 +65,11 @@ int main( int argc, char **argv )
         int r = i / 3;
         int c = i % 3;
 
-        agents[i]->position = glm::vec2(1.2*float(1 + r/2.0f), 1.2*float(1 + c/2.0f));
+        agents[i]->position = glm::vec2(1.2*float(2 + r/2.0f), 1.2*float(2 + c/2.0f));
         agents[i]->linear   = 0.0f;
         agents[i]->angular  = 0.0f;
         agents[i]->bearing  = 0.0f;
+        agents[i]->sonar_bearing  = 0.0f;
     }
 
     for (int i=0; i<NUM_HOSTILES; i++)
@@ -77,7 +78,7 @@ int main( int argc, char **argv )
         int c = i % 3;
 
         hostiles[i]->position = glm::vec2(1.2*float(7 + r/2.0f), 1.2*float(7 + c/2.0f));
-        hostiles[i]->linear   = 0.0f;
+        hostiles[i]->linear   = 0.1f;
         hostiles[i]->angular  = 0.0f;
         hostiles[i]->bearing  = 0.0f;
     }
@@ -93,11 +94,13 @@ int main( int argc, char **argv )
     {
         std::string label1 = "a3env/sonars" + std::to_string(i);
         std::string label2 = "a3env/odom" + std::to_string(i);
+        std::string label3 = "/a3env/motors" + std::to_string(i);
 
-        sonars_pub[i] = n.advertise<a3env::sonars>(label1, 16);
-        odom_pub[i]   = n.advertise<a3env::odom>(label2, 16);
+        sonars_pub[i] = n.advertise<a3env::sonars>(label1, 64);
+        odom_pub[i]   = n.advertise<a3env::odom>(label2, 64);
+        motors_sub[i] = n.subscribe(label3, 64, motors_callback);
     }
-    ros::ServiceServer service = n.advertiseService("a3env/motors", motors_callback);
+    // ros::ServiceServer service = n.advertiseService("a3env/motors", motors_callback);
     // --------------------------------------------------------------------------
 
 
@@ -116,14 +119,14 @@ int main( int argc, char **argv )
     initWindow(window, ren, view);
     // --------------------------------------------------------------------------
 
-    ros::Rate rate(60);
+    // ros::Rate rate(4);
 
     while (ros::ok())
     {
-        ros::spinOnce();
-
         renderLoop(ren, view);
         updateEnvironment();
+    
+        ros::spinOnce();
     }
 
     return 0;
@@ -156,6 +159,10 @@ void updateEnvironment()
         a3env::sonars S;
         S.timestamp = ros::Time::now().toNSec();
         S.distance  = agents[i]->sonar_dist;
+        S.dx        = cos(agents[i]->sonar_bearing);
+        S.dy        = sin(agents[i]->sonar_bearing);
+        S.xhit      = agents[i]->sonar_hit.x;
+        S.yhit      = agents[i]->sonar_hit.y;
         S.blocktype = agents[i]->sonar_block;
         S.data      = agents[i]->sonar_data;
 
@@ -163,7 +170,7 @@ void updateEnvironment()
         O.timestamp = ros::Time::now().toNSec();
         O.xpos      = agents[i]->position.x;
         O.ypos      = agents[i]->position.y;
-        O.bearing   = agents[i]->bearing;
+        // O.bearing   = agents[i]->bearing;
 
         sonars_pub[i].publish(S);
         odom_pub[i].publish(O);
@@ -172,17 +179,17 @@ void updateEnvironment()
 
 
 
-bool motors_callback( a3env::motors::Request &req, a3env::motors::Response &res )
+void motors_callback( const a3env::motors &msg )
 {
-    if (req.agentid < 0 || req.agentid >= NUM_AGENTS)
+    if (msg.agentid < 0 || msg.agentid >= NUM_AGENTS)
     {
-        return false;
+        ROS_ERROR("REE");
+        return;
     }
 
-    agents[req.agentid]->bearing = req.bearing;
-    agents[req.agentid]->linear  = req.linear;
+    agents[msg.agentid]->bearing = msg.bearing;
+    agents[msg.agentid]->linear  = msg.linear;
 
-    return true;
 }
 
 

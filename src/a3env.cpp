@@ -69,10 +69,11 @@ int main( int argc, char **argv )
 
     for (int i=0; i<NUM_AGENTS; i++)
     {
-        int r = i / 3;
-        int c = i % 3;
+        int idx = environment.randomFreeCell();
+        int r = idx / MAP_WIDTH;
+        int c = idx % MAP_WIDTH;
 
-        agents[i]->position = glm::vec2(1.2*float(2 + r/2.0f), 1.2*float(2 + c/2.0f));
+        agents[i]->position = glm::vec2(c, r) + 0.5f;
         agents[i]->linear   = 0.0f;
         agents[i]->angular  = 0.0f;
         agents[i]->bearing  = 0.0f;
@@ -81,10 +82,11 @@ int main( int argc, char **argv )
 
     for (int i=0; i<NUM_HOSTILES; i++)
     {
-        int r = i / 3;
-        int c = i % 3;
+        int idx = environment.randomFreeCell();
+        int r = idx / MAP_WIDTH;
+        int c = idx % MAP_WIDTH;
 
-        hostiles[i]->position = glm::vec2(1.2*float(7 + r/2.0f), 1.2*float(7 + c/2.0f));
+        hostiles[i]->position = glm::vec2(c, r) + 0.5f;
         hostiles[i]->linear   = 0.1f;
         hostiles[i]->angular  = 0.0f;
         hostiles[i]->bearing  = 0.0f;
@@ -92,10 +94,11 @@ int main( int argc, char **argv )
 
     for (int i=0; i<NUM_SURVIVORS; i++)
     {
-        int r = i / 3;
-        int c = i % 3;
+        int idx = environment.randomFreeCell();
+        int r = idx / MAP_WIDTH;
+        int c = idx % MAP_WIDTH;
 
-        survivors[i]->position = glm::vec2(7.5f, 10.5f);
+        survivors[i]->position = glm::vec2(c, r) + 0.5f;
         survivors[i]->linear   = 0.0f;
         survivors[i]->angular  = 0.0f;
         survivors[i]->bearing  = 0.0f;

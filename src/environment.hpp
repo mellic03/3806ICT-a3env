@@ -37,6 +37,8 @@ public:
     void updateHostiles( std::vector<Hostile *> &hostiles );
     void updateSurvivors( std::vector<Agent*>&, std::vector<Hostile*>&, std::vector<Survivor*>& );
 
+    int randomFreeCell();
+
 };
 
 

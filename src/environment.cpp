@@ -302,3 +302,19 @@ Environment::operator [] ( int row )
 }
 
 
+int
+Environment::randomFreeCell()
+{
+    int row = rand() % MAP_WIDTH;
+    int col = rand() % MAP_WIDTH;
+
+    while (m_data[row][col] != BLOCK_AIR)
+    {
+        row = rand() % MAP_WIDTH;
+        col = rand() % MAP_WIDTH;
+    }
+
+    std::cout << row << ", " << col << "\n";
+
+    return MAP_WIDTH*row + col;
+}

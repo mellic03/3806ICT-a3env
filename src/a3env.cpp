@@ -180,7 +180,6 @@ void updateEnvironment()
     for (int i=0; i<NUM_AGENTS; i++)
     {
         a3env::sonars S;
-        S.timestamp = ros::Time::now().toNSec();
         S.distance  = agents[i]->sonar_dist;
         S.dx        = cos(agents[i]->sonar_bearing);
         S.dy        = sin(agents[i]->sonar_bearing);
@@ -190,7 +189,6 @@ void updateEnvironment()
         S.data      = agents[i]->sonar_data;
 
         a3env::odom O;
-        O.timestamp = ros::Time::now().toNSec();
         O.xpos      = agents[i]->position.x;
         O.ypos      = agents[i]->position.y;
         // O.bearing   = agents[i]->bearing;

@@ -305,14 +305,20 @@ Environment::operator [] ( int row )
 int
 Environment::randomFreeCell()
 {
+    static std::set<int> previous;
+
     int row = rand() % MAP_WIDTH;
     int col = rand() % MAP_WIDTH;
+    int idx = MAP_WIDTH*row + col;
 
-    while (m_data[row][col] != BLOCK_AIR)
+    while (m_data[row][col] != BLOCK_AIR && previous.find(idx) == previous.end())
     {
         row = rand() % MAP_WIDTH;
         col = rand() % MAP_WIDTH;
+        idx = MAP_WIDTH*row + col;
     }
 
-    return MAP_WIDTH*row + col;
+    previous.insert(idx);
+
+    return idx;
 }

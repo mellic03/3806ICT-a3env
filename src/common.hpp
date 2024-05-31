@@ -13,7 +13,7 @@ namespace a3env
         BLOCK_HOSTILE  = 4
     };
 
-    static constexpr size_t NUM_AGENTS    = 1;
+    static constexpr size_t NUM_AGENTS    = 2;
     static constexpr size_t NUM_HOSTILES  = 2;
     static constexpr size_t NUM_SURVIVORS = 3;
     static constexpr size_t MAP_WIDTH     = 12;

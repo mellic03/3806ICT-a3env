@@ -314,7 +314,5 @@ Environment::randomFreeCell()
         col = rand() % MAP_WIDTH;
     }
 
-    std::cout << row << ", " << col << "\n";
-
     return MAP_WIDTH*row + col;
 }

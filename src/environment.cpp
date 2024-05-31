@@ -172,6 +172,11 @@ Environment::updateEntities( std::vector<Entity *> &entities )
     {
         Entity *e = entities[i];
 
+        if (e->active == false)
+        {
+            continue;
+        }
+
         glm::vec2 dir  = e->linear * glm::vec2(cos(e->bearing), sin(e->bearing));
         glm::vec2 next = e->position + dir;
 
@@ -189,6 +194,11 @@ Environment::updateEntities( std::vector<Entity *> &entities )
         bool good = true;
         for (int j=0; j<entities.size(); j++)
         {
+            if (entities[j]->active == false)
+            {
+                continue;
+            }
+
             if (i != j && glm::distance(next, entities[j]->position) < 0.25f)
             {
                 good = false;
@@ -254,13 +264,14 @@ Environment::updateHostiles( std::vector<Hostile *> &hostiles )
 
 
 void
-Environment::updateSurvivors( std::vector<Agent *> &agents, std::vector<Survivor *> &survivors )
+Environment::updateSurvivors( std::vector<Agent*> &agents, std::vector<Hostile*> &hostiles,
+                              std::vector<Survivor *> &survivors )
 {
     m_survivor_positions.clear();
 
     for (Survivor *e: survivors)
     {
-        if (!e->active)
+        if (e->active == false)
         {
             continue;
         }

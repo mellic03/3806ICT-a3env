@@ -171,7 +171,7 @@ void updateEnvironment()
     environment.updateEntities(entities);
     environment.updateAgents(agents);
     environment.updateHostiles(hostiles);
-    environment.updateSurvivors(agents, survivors);
+    environment.updateSurvivors(agents, hostiles, survivors);
 
     for (int i=0; i<NUM_AGENTS; i++)
     {

@@ -35,7 +35,7 @@ public:
     void updateEntities( std::vector<Entity *> &entities );
     void updateAgents( std::vector<Agent *> &agents );
     void updateHostiles( std::vector<Hostile *> &hostiles );
-    void updateSurvivors( std::vector<Survivor *> &survivors );
+    void updateSurvivors( std::vector<Agent *> &agents, std::vector<Survivor *> &survivors );
 
 };
 

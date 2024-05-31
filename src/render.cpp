@@ -81,6 +81,11 @@ void renderGrid( SDL_Renderer *ren, const View &view, const std::vector<std::vec
 
 void renderEntity( SDL_Renderer *ren, const View &view, Entity *e )
 {
+    if (!e->active)
+    {
+        return;
+    }
+
     constexpr float body_w = a3env::ENTITY_BODY_W;
     constexpr float head_w = a3env::ENTITY_HEAD_W;
 

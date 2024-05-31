@@ -16,6 +16,7 @@ struct Entity
 {
     int        id;
     EntityType type;
+    bool       active = true;
 
     Entity( int entity_id, EntityType t )
     :   id(entity_id),

@@ -254,17 +254,32 @@ Environment::updateHostiles( std::vector<Hostile *> &hostiles )
 
 
 void
-Environment::updateSurvivors( std::vector<Survivor *> &survivors )
+Environment::updateSurvivors( std::vector<Agent *> &agents, std::vector<Survivor *> &survivors )
 {
     m_survivor_positions.clear();
 
     for (Survivor *e: survivors)
     {
+        if (!e->active)
+        {
+            continue;
+        }
+
         int row  = int(e->position.y);
         int col  = int(e->position.x);
         auto key = std::make_pair(row, col);
 
         m_survivor_positions[key].insert(e);
+
+
+        for (Agent *a: agents)
+        {
+            if (int(a->position.y) == row && int(a->position.x) == col)
+            {
+                e->active = false;
+            }
+        }
+
     }
 }
 

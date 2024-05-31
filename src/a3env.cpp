@@ -4,6 +4,7 @@
 #include "a3env/sonars.h"
 #include "a3env/motors.h"
 #include "a3env/odom.h"
+#include "a3env/deactivate.h"
 
 #include "environment.hpp"
 #include "entities.hpp"
@@ -24,6 +25,7 @@ void mouseInput( View& );
 
 void updateEnvironment();
 void motors_callback( const a3env::motors &msg );
+void deactivate_callback( const a3env::deactivate &msg );
 
 
 static std::vector<Entity *>        entities;
@@ -111,6 +113,8 @@ int main( int argc, char **argv )
     // --------------------------------------------------------------------------
     ros::init(argc, argv, "a3env");
     ros::NodeHandle n;
+
+    ros::Subscriber deactivate_sub = n.subscribe("a3env/deactivate", 8, deactivate_callback);
 
     for (int i=0; i<NUM_AGENTS; i++)
     {
@@ -211,6 +215,12 @@ void motors_callback( const a3env::motors &msg )
     agents[msg.agentid]->bearing = msg.bearing;
     agents[msg.agentid]->linear  = msg.linear;
 
+}
+
+void deactivate_callback( const a3env::deactivate &msg )
+{
+    ROS_INFO("Agent %d deactivated.", msg.agentid);
+    agents[msg.agentid]->active = false;
 }
 
 

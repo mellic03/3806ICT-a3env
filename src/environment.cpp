@@ -1,3 +1,5 @@
+#include <ros/ros.h>
+
 #include "environment.hpp"
 
 #include <fstream>
@@ -301,6 +303,16 @@ Environment::updateSurvivors( std::vector<Agent*> &agents, std::vector<Hostile*>
         {
             if (int(a->position.y) == row && int(a->position.x) == col)
             {
+                ROS_INFO("A survivor was rescued.");
+                e->active = false;
+            }
+        }
+
+        for (Hostile *h: hostiles)
+        {
+            if (int(h->position.y) == row && int(h->position.x) == col)
+            {
+                ROS_INFO("A survivor was killed.");
                 e->active = false;
             }
         }

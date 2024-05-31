@@ -56,6 +56,7 @@ add_message_files(
   sonars.msg
   odom.msg
   motors.msg
+  deactivate.msg
 )
 
 ## Generate services in the 'srv' folder

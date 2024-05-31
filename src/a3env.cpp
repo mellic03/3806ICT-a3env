@@ -88,7 +88,7 @@ int main( int argc, char **argv )
         int c = idx % MAP_WIDTH;
 
         hostiles[i]->position = glm::vec2(c, r) + 0.5f;
-        hostiles[i]->linear   = 0.1f;
+        hostiles[i]->linear   = 0.05f;
         hostiles[i]->angular  = 0.0f;
         hostiles[i]->bearing  = 0.0f;
     }

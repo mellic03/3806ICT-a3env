@@ -249,10 +249,24 @@ Environment::updateHostiles( std::vector<Hostile *> &hostiles )
 
     for (Hostile *h: hostiles)
     {
-        h->bearing += 0.25f * ((rand() % 100) / 100.0f - 0.5f);
+        // h->bearing += 0.25f * ((rand() % 100) / 100.0f - 0.5f);
         // h->linear = 0.11f;
-
+    
         glm::vec2 pos = h->position;
+        glm::vec2 dir = glm::vec2(cos(h->bearing), sin(h->bearing));
+        float dist;
+        glm::vec2 hit;
+        uint8_t block;
+        uint32_t data;
+
+        raycast(pos, dir, dist, hit, block, data);
+
+        if (dist < 0.25f && block != BLOCK_SURVIVOR)
+        {
+            float bearing = 2.0f*M_PI * (rand() % 100 / 100.0f);
+            h->bearing = bearing; // glm::mix(h->bearing, bearing, 0.25f);
+        }
+
 
         int row  = int(pos.y);
         int col  = int(pos.x);
